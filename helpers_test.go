@@ -2,8 +2,9 @@ package gcache_test
 
 import (
 	"fmt"
-	"github.com/bluele/gcache"
 	"testing"
+
+	"github.com/britt/gcache"
 )
 
 func loader(key interface{}) (interface{}, error) {

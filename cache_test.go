@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/bluele/gcache"
+	"github.com/britt/gcache"
 )
 
 func TestLoaderFunc(t *testing.T) {

@@ -2,9 +2,10 @@ package gcache_test
 
 import (
 	"fmt"
-	"github.com/bluele/gcache"
 	"testing"
 	"time"
+
+	"github.com/britt/gcache"
 )
 
 func buildARCache(size int) gcache.Cache {
@@ -67,10 +68,10 @@ func TestARCGetIFPresent(t *testing.T) {
 	cache := gcache.
 		New(8).
 		LoaderFunc(
-		func(key interface{}) (interface{}, error) {
-			time.Sleep(100 * time.Millisecond)
-			return "value", nil
-		}).
+			func(key interface{}) (interface{}, error) {
+				time.Sleep(100 * time.Millisecond)
+				return "value", nil
+			}).
 		ARC().
 		Build()
 
