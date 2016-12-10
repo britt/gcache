@@ -16,7 +16,11 @@ type ScoreCache struct {
 	totalWeight   int
 }
 
+// ScoringFunc computes the eviction priority for the queue
 type ScoringFunc func(value interface{}) int
+
+// WeightingFunc computes the weight of the item to determine
+// when evictions are necessary.
 type WeightingFunc func(value interface{}) int
 
 func newScoreCache(cb *CacheBuilder) *ScoreCache {

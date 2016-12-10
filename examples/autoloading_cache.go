@@ -1,13 +1,9 @@
 package main
 
-import (
-	"fmt"
-
-	"github.com/britt/gcache"
-)
+import "fmt"
 
 func main() {
-	gc := gcache.New(10).
+	gc := New(10).
 		LFU().
 		LoaderFunc(func(key interface{}) (interface{}, error) {
 			return fmt.Sprintf("%v-value", key), nil

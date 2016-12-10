@@ -1,22 +1,20 @@
-package gcache_test
+package gcache
 
 import (
 	"fmt"
 	"testing"
 	"time"
-
-	"github.com/britt/gcache"
 )
 
-func buildARCache(size int) gcache.Cache {
-	return gcache.New(size).
+func buildARCache(size int) Cache {
+	return New(size).
 		ARC().
 		EvictedFunc(evictedFuncForARC).
 		Build()
 }
 
-func buildLoadingARCache(size int) gcache.Cache {
-	return gcache.New(size).
+func buildLoadingARCache(size int) Cache {
+	return New(size).
 		ARC().
 		LoaderFunc(loader).
 		EvictedFunc(evictedFuncForARC).
@@ -65,18 +63,18 @@ func TestARCEvictItem(t *testing.T) {
 }
 
 func TestARCGetIFPresent(t *testing.T) {
-	cache := gcache.
+	cache :=
 		New(8).
-		LoaderFunc(
-			func(key interface{}) (interface{}, error) {
-				time.Sleep(100 * time.Millisecond)
-				return "value", nil
-			}).
-		ARC().
-		Build()
+			LoaderFunc(
+				func(key interface{}) (interface{}, error) {
+					time.Sleep(100 * time.Millisecond)
+					return "value", nil
+				}).
+			ARC().
+			Build()
 
 	v, err := cache.GetIFPresent("key")
-	if err != gcache.KeyNotFoundError {
+	if err != KeyNotFoundError {
 		t.Errorf("err should not be %v", err)
 	}
 
@@ -93,10 +91,10 @@ func TestARCGetIFPresent(t *testing.T) {
 
 func TestARCGetALL(t *testing.T) {
 	size := 8
-	cache := gcache.
+	cache :=
 		New(size).
-		ARC().
-		Build()
+			ARC().
+			Build()
 
 	for i := 0; i < size; i++ {
 		cache.Set(i, i*i)

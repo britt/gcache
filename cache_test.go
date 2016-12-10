@@ -1,22 +1,19 @@
-package gcache_test
+package gcache
 
 import (
-	"testing"
-	"time"
-
 	"sync"
 	"sync/atomic"
-
-	"github.com/britt/gcache"
+	"testing"
+	"time"
 )
 
 func TestLoaderFunc(t *testing.T) {
 	size := 2
-	var testCaches = []*gcache.CacheBuilder{
-		gcache.New(size).Simple(),
-		gcache.New(size).LRU(),
-		gcache.New(size).LFU(),
-		gcache.New(size).ARC(),
+	var testCaches = []*CacheBuilder{
+		New(size).Simple(),
+		New(size).LRU(),
+		New(size).LFU(),
+		New(size).ARC(),
 	}
 	for _, builder := range testCaches {
 		var testCounter int64

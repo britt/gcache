@@ -1,27 +1,25 @@
-package gcache_test
+package gcache
 
 import (
 	"fmt"
 	"testing"
 	"time"
-
-	"github.com/britt/gcache"
 )
 
 func evictedFuncForLFU(key, value interface{}) {
 	fmt.Printf("[LFU] Key:%v Value:%v will evicted.\n", key, value)
 }
 
-func buildLFUCache(size int) gcache.Cache {
-	return gcache.New(size).
+func buildLFUCache(size int) Cache {
+	return New(size).
 		LFU().
 		EvictedFunc(evictedFuncForLFU).
 		Expiration(time.Second).
 		Build()
 }
 
-func buildLoadingLFUCache(size int, loader gcache.LoaderFunc) gcache.Cache {
-	return gcache.New(size).
+func buildLoadingLFUCache(size int, loader LoaderFunc) Cache {
+	return New(size).
 		LFU().
 		LoaderFunc(loader).
 		EvictedFunc(evictedFuncForLFU).
@@ -71,18 +69,18 @@ func TestLFUEvictItem(t *testing.T) {
 }
 
 func TestLFUGetIFPresent(t *testing.T) {
-	cache := gcache.
+	cache :=
 		New(8).
-		LoaderFunc(
-			func(key interface{}) (interface{}, error) {
-				time.Sleep(100 * time.Millisecond)
-				return "value", nil
-			}).
-		LFU().
-		Build()
+			LoaderFunc(
+				func(key interface{}) (interface{}, error) {
+					time.Sleep(100 * time.Millisecond)
+					return "value", nil
+				}).
+			LFU().
+			Build()
 
 	v, err := cache.GetIFPresent("key")
-	if err != gcache.KeyNotFoundError {
+	if err != KeyNotFoundError {
 		t.Errorf("err should not be %v", err)
 	}
 
@@ -99,10 +97,10 @@ func TestLFUGetIFPresent(t *testing.T) {
 
 func TestLFUGetALL(t *testing.T) {
 	size := 8
-	cache := gcache.
+	cache :=
 		New(size).
-		LFU().
-		Build()
+			LFU().
+			Build()
 
 	for i := 0; i < size; i++ {
 		cache.Set(i, i*i)

@@ -1,17 +1,15 @@
-package gcache_test
+package gcache
 
 import (
 	"fmt"
 	"testing"
-
-	"github.com/britt/gcache"
 )
 
 func loader(key interface{}) (interface{}, error) {
 	return fmt.Sprintf("valueFor%s", key), nil
 }
 
-func testSetCache(t *testing.T, gc gcache.Cache, numbers int) {
+func testSetCache(t *testing.T, gc Cache, numbers int) {
 	for i := 0; i < numbers; i++ {
 		key := fmt.Sprintf("Key-%d", i)
 		value, err := loader(key)
@@ -23,7 +21,7 @@ func testSetCache(t *testing.T, gc gcache.Cache, numbers int) {
 	}
 }
 
-func testGetCache(t *testing.T, gc gcache.Cache, numbers int) {
+func testGetCache(t *testing.T, gc Cache, numbers int) {
 	for i := 0; i < numbers; i++ {
 		key := fmt.Sprintf("Key-%d", i)
 		v, err := gc.Get(key)

@@ -14,6 +14,22 @@ func buildScoreCache(size int) Cache {
 		Build()
 }
 
+func TestScoreCache_GetSet(t *testing.T) {
+	size := 1000
+	c := buildScoreCache(size)
+	testSetCache(t, c, size)
+	testGetCache(t, c, size)
+}
+
+func TestScoreCache_Get_WithLoader(t *testing.T) {}
+func TestScoreCache_GetIFPresent(t *testing.T)   {}
+func TestScoreCache_GetALL(t *testing.T)         {}
+func TestScoreCache_Eviction(t *testing.T)       {}
+func TestScoreCache_Len(t *testing.T)            {}
+func TestScoreCache_Remove(t *testing.T)         {}
+func TestScoreCache_Purge(t *testing.T)          {}
+func TestScoreCache_Keys(t *testing.T)           {}
+
 func TestSplode(t *testing.T) {
 	c := buildScoreCache(100)
 	assert.NotNil(t, c)

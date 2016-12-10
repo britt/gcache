@@ -1,22 +1,20 @@
-package gcache_test
+package gcache
 
 import (
 	"fmt"
 	"testing"
 	"time"
-
-	gcache "github.com/britt/gcache"
 )
 
-func buildSimpleCache(size int) gcache.Cache {
-	return gcache.New(size).
+func buildSimpleCache(size int) Cache {
+	return New(size).
 		Simple().
 		EvictedFunc(evictedFuncForSimple).
 		Build()
 }
 
-func buildLoadingSimpleCache(size int, loader gcache.LoaderFunc) gcache.Cache {
-	return gcache.New(size).
+func buildLoadingSimpleCache(size int, loader LoaderFunc) Cache {
+	return New(size).
 		LoaderFunc(loader).
 		Simple().
 		EvictedFunc(evictedFuncForSimple).
@@ -65,18 +63,18 @@ func TestSimpleEvictItem(t *testing.T) {
 }
 
 func TestSimpleGetIFPresent(t *testing.T) {
-	cache := gcache.
+	cache :=
 		New(8).
-		LoaderFunc(
-			func(key interface{}) (interface{}, error) {
-				time.Sleep(100 * time.Millisecond)
-				return "value", nil
-			}).
-		Simple().
-		Build()
+			LoaderFunc(
+				func(key interface{}) (interface{}, error) {
+					time.Sleep(100 * time.Millisecond)
+					return "value", nil
+				}).
+			Simple().
+			Build()
 
 	v, err := cache.GetIFPresent("key")
-	if err != gcache.KeyNotFoundError {
+	if err != KeyNotFoundError {
 		t.Errorf("err should not be %v", err)
 	}
 
@@ -92,10 +90,10 @@ func TestSimpleGetIFPresent(t *testing.T) {
 }
 
 func TestSimpleGetALL(t *testing.T) {
-	cache := gcache.
+	cache :=
 		New(8).
-		Simple().
-		Build()
+			Simple().
+			Build()
 
 	for i := 0; i < 8; i++ {
 		cache.Set(i, i*i)
