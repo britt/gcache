@@ -1,5 +1,7 @@
 # github.com/britt/GCache
 
+**Status: non-functional ... (coming soon)**
+
 A fork of [Jun Kimura's GCache](https://github.com/bluele/gcache) that adds the ScoreCache type. 
 ScoreCache uses a scoring function to identify candidates for eviction. Lowest
 scored items are evicted first. It also uses an aggregate metric rather (like total bytes cached) 

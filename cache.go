@@ -11,6 +11,7 @@ const (
 	TYPE_LRU    = "lru"
 	TYPE_LFU    = "lfu"
 	TYPE_ARC    = "arc"
+	TYPE_SCORE  = "score"
 )
 
 var KeyNotFoundError = errors.New("Key not found.")
@@ -47,12 +48,14 @@ type EvictedFunc func(interface{}, interface{})
 type AddedFunc func(interface{}, interface{})
 
 type CacheBuilder struct {
-	tp          string
-	size        int
-	loaderFunc  *LoaderFunc
-	evictedFunc *EvictedFunc
-	addedFunc   *AddedFunc
-	expiration  *time.Duration
+	tp            string
+	size          int
+	loaderFunc    *LoaderFunc
+	evictedFunc   *EvictedFunc
+	addedFunc     *AddedFunc
+	scoringFunc   ScoringFunc
+	weightingFunc WeightingFunc
+	expiration    *time.Duration
 }
 
 func New(size int) *CacheBuilder {
@@ -93,6 +96,10 @@ func (cb *CacheBuilder) ARC() *CacheBuilder {
 	return cb.EvictType(TYPE_ARC)
 }
 
+func (cb *CacheBuilder) SCORE() *CacheBuilder {
+	return cb.EvictType(TYPE_SCORE)
+}
+
 func (cb *CacheBuilder) EvictedFunc(evictedFunc EvictedFunc) *CacheBuilder {
 	cb.evictedFunc = &evictedFunc
 	return cb
@@ -100,6 +107,16 @@ func (cb *CacheBuilder) EvictedFunc(evictedFunc EvictedFunc) *CacheBuilder {
 
 func (cb *CacheBuilder) AddedFunc(addedFunc AddedFunc) *CacheBuilder {
 	cb.addedFunc = &addedFunc
+	return cb
+}
+
+func (cb *CacheBuilder) ScoringFunc(s ScoringFunc) *CacheBuilder {
+	cb.scoringFunc = s
+	return cb
+}
+
+func (cb *CacheBuilder) WeightingFunc(w WeightingFunc) *CacheBuilder {
+	cb.weightingFunc = w
 	return cb
 }
 
@@ -122,6 +139,8 @@ func (cb *CacheBuilder) build() Cache {
 		return newLFUCache(cb)
 	case TYPE_ARC:
 		return newARC(cb)
+	case TYPE_SCORE:
+		return newScoreCache(cb)
 	default:
 		panic("gcache: Unknown type " + cb.tp)
 	}
