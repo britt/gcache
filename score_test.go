@@ -140,7 +140,63 @@ func TestScoreCache_Len(t *testing.T) {
 	assert.Equal(t, 17, c.Len())
 }
 
-func TestScoreCache_Remove(t *testing.T) {}
-func TestScoreCache_Purge(t *testing.T)  {}
-func TestScoreCache_Keys(t *testing.T)   {}
-func TestScoreCache_Stats(t *testing.T)  {}
+func TestScoreCache_Keys(t *testing.T) {
+	c := buildScoreCache(10, 2)
+
+	items := []int{1, 2, 3, 4, 5}
+	for _, i := range items {
+		c.Set(i, i)
+	}
+
+	keys := c.Keys()
+	assert.Equal(t, len(items), len(keys))
+
+	for _, k := range keys {
+		idx := -1
+		for n, i := range items {
+			if i == k {
+				idx = n
+				break
+			}
+		}
+		assert.NotEqual(t, -1, idx)
+	}
+}
+
+func TestScoreCache_Remove(t *testing.T) {
+	c := buildScoreCache(10, 2)
+
+	items := []int{1, 2, 3, 4, 5}
+	for _, i := range items {
+		c.Set(i, i)
+	}
+
+	assert.True(t, c.Remove(3))
+	assert.Equal(t, 4, c.Len())
+	pairs := c.GetALL()
+
+	for k, v := range pairs {
+		assert.NotEqual(t, 3, k)
+		assert.NotEqual(t, 3, v)
+	}
+}
+
+func TestScoreCache_Purge(t *testing.T) {
+	c := buildScoreCache(10, 2)
+
+	items := []int{1, 2, 3, 4, 5}
+	for _, i := range items {
+		c.Set(i, i)
+	}
+
+	assert.Equal(t, len(items), c.Len())
+	c.Purge()
+	assert.Equal(t, 0, c.Len())
+}
+
+func TestScoreCache_Stats(t *testing.T) {
+	// HitCount() uint64
+	// MissCount() uint64
+	// LookupCount() uint64
+	// HitRate() float64
+}
