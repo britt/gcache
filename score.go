@@ -57,7 +57,12 @@ func (sc *ScoreCache) Get(key interface{}) (interface{}, error) {
 func (sc *ScoreCache) GetIFPresent(key interface{}) (interface{}, error) {
 	sc.mu.RLock()
 	defer sc.mu.RUnlock()
-	return sc.getItem(key)
+	item, err := sc.getItem(key)
+
+	if item != nil {
+		return item.value, nil
+	}
+	return nil, err
 }
 
 // GetALL returns all if the cached values
