@@ -1,8 +1,7 @@
 package gcache
 
-// TODO: Eviction selection other than FIFO
-// TODO: Maintain totalWeight properly
-// TODO: Maintain hit/miss stats
+// TODO: Eviction by priority
+// TODO: See if there is a way to get rid of the flag arguments
 
 // ScoreCache Discards the lowest scored items first.
 // It uses an aggregate metric like total bytes to
@@ -45,7 +44,7 @@ func (sc *ScoreCache) Get(key interface{}) (interface{}, error) {
 	sc.mu.RLock()
 	defer sc.mu.RUnlock()
 
-	item, err := sc.getItem(key)
+	item, err := sc.getItem(key, true)
 	if err != nil {
 		return sc.getWithLoader(key, true)
 	}
@@ -57,7 +56,7 @@ func (sc *ScoreCache) Get(key interface{}) (interface{}, error) {
 func (sc *ScoreCache) GetIFPresent(key interface{}) (interface{}, error) {
 	sc.mu.RLock()
 	defer sc.mu.RUnlock()
-	item, err := sc.getItem(key)
+	item, err := sc.getItem(key, true)
 
 	if item != nil {
 		return item.value, nil
@@ -88,7 +87,7 @@ func (sc *ScoreCache) Set(key, value interface{}) {
 // set an item without locking and return the item
 func (sc *ScoreCache) set(key, value interface{}) *scoredItem {
 	// Check for existing item
-	existing, err := sc.getItem(key)
+	existing, err := sc.getItem(key, false)
 	if err == nil {
 		sc.totalWeight -= existing.weight
 		existing.value = value
@@ -194,14 +193,20 @@ func (sc *ScoreCache) getWithLoader(key interface{}, isWait bool) (interface{}, 
 func (sc *ScoreCache) get(key interface{}, onLoad bool) (interface{}, error) {
 	sc.mu.RLock()
 	defer sc.mu.RUnlock()
-	return sc.getItem(key)
+	return sc.getItem(key, onLoad)
 }
 
 // gets an item from the cache (not threadsafe!)
-func (sc *ScoreCache) getItem(key interface{}) (*scoredItem, error) {
+func (sc *ScoreCache) getItem(key interface{}, count bool) (*scoredItem, error) {
 	item, ok := sc.items[key]
 	if !ok {
+		if count {
+			sc.IncrMissCount()
+		}
 		return item, KeyNotFoundError
+	}
+	if count {
+		sc.IncrHitCount()
 	}
 	return item, nil
 }

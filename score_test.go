@@ -195,8 +195,66 @@ func TestScoreCache_Purge(t *testing.T) {
 }
 
 func TestScoreCache_Stats(t *testing.T) {
-	// HitCount() uint64
-	// MissCount() uint64
-	// LookupCount() uint64
-	// HitRate() float64
+	initCache := func() Cache {
+		c := buildScoreCache(10, 2)
+
+		items := []int{1, 2, 3, 4, 5}
+		for _, i := range items {
+			c.Set(i, i)
+		}
+		return c
+	}
+
+	t.Run("Hit count", func(t *testing.T) {
+		c := initCache()
+		c.Get(1)
+		c.Get(2)
+		c.Get(3)
+
+		assert.Equal(t, uint64(3), c.HitCount())
+		assert.Equal(t, uint64(0), c.MissCount())
+		assert.Equal(t, uint64(3), c.LookupCount())
+	})
+
+	t.Run("Miss count", func(t *testing.T) {
+		c := initCache()
+		c.Get(0)
+		c.Get(-1)
+		c.Get(-2)
+
+		assert.Equal(t, uint64(0), c.HitCount())
+		assert.Equal(t, uint64(3), c.MissCount())
+		assert.Equal(t, uint64(3), c.LookupCount())
+	})
+
+	t.Run("LookupCount count", func(t *testing.T) {
+		c := initCache()
+		c.Get(1)
+		c.Get(2)
+		c.Get(3)
+		c.Get(0)
+		c.Get(-1)
+		c.Get(-2)
+
+		assert.Equal(t, uint64(3), c.HitCount())
+		assert.Equal(t, uint64(3), c.MissCount())
+		assert.Equal(t, uint64(6), c.LookupCount())
+	})
+
+	t.Run("Hit rate", func(t *testing.T) {
+		c := initCache()
+		c.Get(1)
+		c.Get(2)
+		c.Get(0)
+		c.Get(-1)
+		c.Get(-2)
+		c.Get(-3)
+		c.Get(-4)
+		c.Get(-5)
+
+		assert.Equal(t, uint64(2), c.HitCount())
+		assert.Equal(t, uint64(6), c.MissCount())
+		assert.Equal(t, uint64(8), c.LookupCount())
+		assert.Equal(t, float64(0.25), c.HitRate())
+	})
 }
