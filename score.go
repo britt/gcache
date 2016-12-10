@@ -90,9 +90,11 @@ func (sc *ScoreCache) set(key, value interface{}) *scoredItem {
 	// Check for existing item
 	existing, err := sc.getItem(key)
 	if err == nil {
+		sc.totalWeight -= existing.weight
 		existing.value = value
 		existing.score = sc.computeScore(value)
 		existing.weight = sc.computeWeight(value)
+		sc.totalWeight += existing.weight
 		return existing
 	}
 
@@ -104,6 +106,7 @@ func (sc *ScoreCache) set(key, value interface{}) *scoredItem {
 	}
 	sc.evictList = append(sc.evictList, item)
 	sc.items[key] = item
+	sc.totalWeight += item.weight
 
 	sc.addedCallback(key, value)
 

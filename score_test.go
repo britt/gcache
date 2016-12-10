@@ -7,17 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func buildScoreCache(size int) Cache {
+func buildScoreCache(size, weight int) Cache {
 	return New(size).
 		SCORE().
 		ScoringFunc(func(_ interface{}) int { return 1 }).
-		WeightingFunc(func(_ interface{}) int { return 1 }).
+		WeightingFunc(func(_ interface{}) int { return weight }).
 		Build()
 }
 
 func TestScoreCache_GetSet(t *testing.T) {
 	size := 1000
-	c := buildScoreCache(size)
+	c := buildScoreCache(size, 1)
 	testSetCache(t, c, size)
 	testGetCache(t, c, size)
 }
@@ -26,7 +26,7 @@ func TestScoreCache_Get_WithLoader(t *testing.T) {
 	c := New(100).
 		SCORE().
 		ScoringFunc(func(_ interface{}) int { return 1 }).
-		WeightingFunc(func(_ interface{}) int { return 1 }).
+		WeightingFunc(func(_ interface{}) int { return 2 }).
 		LoaderFunc(func(key interface{}) (interface{}, error) {
 			return fmt.Sprintf("%v", key), nil
 		}).
@@ -46,7 +46,7 @@ func TestScoreCache_Get_WithLoader(t *testing.T) {
 }
 
 func TestScoreCache_GetIFPresent(t *testing.T) {
-	c := buildScoreCache(10)
+	c := buildScoreCache(10, 2)
 
 	for i := 0; i < 5; i++ {
 		c.Set(i, i)
@@ -65,7 +65,7 @@ func TestScoreCache_GetIFPresent(t *testing.T) {
 }
 
 func TestScoreCache_GetALL(t *testing.T) {
-	c := buildScoreCache(10)
+	c := buildScoreCache(10, 2)
 
 	for i := 0; i < 5; i++ {
 		c.Set(i, i)
@@ -98,20 +98,49 @@ func TestScoreCache_Set_Callback(t *testing.T) {
 		assert.Equal(t, i, added[i])
 	}
 }
-func TestScoreCache_MaxSize(t *testing.T)           {}
-func TestScoreCache_Eviction(t *testing.T)          {}
-func TestScoreCache_Eviction_Callback(t *testing.T) {}
-func TestScoreCache_Len(t *testing.T)               {}
-func TestScoreCache_Remove(t *testing.T)            {}
-func TestScoreCache_Purge(t *testing.T)             {}
-func TestScoreCache_Keys(t *testing.T)              {}
-func TestScoreCache_Stats(t *testing.T)             {}
 
-func TestSplode(t *testing.T) {
-	c := buildScoreCache(100)
-	assert.NotNil(t, c)
-	c.Set(1, 2)
-	v, err := c.Get(1)
-	assert.Nil(t, err)
-	assert.Equal(t, 2, v)
+func TestScoreCache_MaxSize(t *testing.T) {
+	c := buildScoreCache(20, 2)
+
+	for i := 0; i < 50; i++ {
+		c.Set(i, i)
+	}
+
+	assert.Equal(t, 10, c.Len())
+	assert.Equal(t, 20, c.(*ScoreCache).totalWeight)
 }
+
+func TestScoreCache_Eviction(t *testing.T) {
+	evictions := 0
+
+	c := New(10).
+		SCORE().
+		ScoringFunc(func(_ interface{}) int { return 1 }).
+		WeightingFunc(func(_ interface{}) int { return 1 }).
+		EvictedFunc(func(key, value interface{}) {
+			evictions++
+		}).
+		Build()
+
+	for i := 0; i < 30; i++ {
+		c.Set(i, i)
+	}
+
+	assert.Equal(t, 10, c.Len())
+	assert.Equal(t, 20, evictions)
+}
+
+func TestScoreCache_Len(t *testing.T) {
+	c := buildScoreCache(100, 2)
+
+	for i := 0; i < 17; i++ {
+		c.Set(i, i)
+	}
+
+	assert.Equal(t, 17, c.Len())
+}
+
+func TestScoreCache_Remove(t *testing.T) {}
+func TestScoreCache_Purge(t *testing.T)  {}
+func TestScoreCache_Keys(t *testing.T)   {}
+func TestScoreCache_Stats(t *testing.T)  {}
