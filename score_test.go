@@ -100,34 +100,46 @@ func TestScoreCache_Set_Callback(t *testing.T) {
 }
 
 func TestScoreCache_MaxSize(t *testing.T) {
-	c := buildScoreCache(20, 2)
+	c := buildScoreCache(10, 1)
 
 	for i := 0; i < 50; i++ {
 		c.Set(i, i)
 	}
 
 	assert.Equal(t, 10, c.Len())
-	assert.Equal(t, 20, c.(*ScoreCache).totalWeight)
+	assert.Equal(t, 10, c.(*ScoreCache).totalWeight)
 }
 
 func TestScoreCache_Eviction(t *testing.T) {
 	evictions := 0
-
+	evicted := make(map[int]int)
 	c := New(10).
 		SCORE().
-		ScoringFunc(func(_ interface{}) int { return 1 }).
+		ScoringFunc(func(i interface{}) int {
+			x := i.(int)
+			if x%2 == 0 {
+				return x
+			}
+			return x + 1000
+		}).
 		WeightingFunc(func(_ interface{}) int { return 1 }).
 		EvictedFunc(func(key, value interface{}) {
 			evictions++
+			evicted[key.(int)] = value.(int)
 		}).
 		Build()
 
-	for i := 0; i < 30; i++ {
+	for i := 0; i < 20; i++ {
 		c.Set(i, i)
 	}
 
 	assert.Equal(t, 10, c.Len())
-	assert.Equal(t, 20, evictions)
+	assert.Equal(t, 10, evictions)
+	assert.Equal(t, 10, len(evicted))
+
+	for key := range evicted {
+		assert.True(t, key%2 == 0)
+	}
 }
 
 func TestScoreCache_Len(t *testing.T) {

@@ -1,6 +1,7 @@
 package gcache
 
-// TODO: Eviction by priority
+import "container/heap"
+
 // TODO: See if there is a way to get rid of the flag arguments
 
 // ScoreCache Discards the lowest scored items first.
@@ -9,7 +10,7 @@ package gcache
 type ScoreCache struct {
 	baseCache
 	items         map[interface{}]*scoredItem
-	evictList     []*scoredItem
+	evictList     *priorityHeap
 	computeScore  ScoringFunc
 	computeWeight WeightingFunc
 	totalWeight   int
@@ -34,7 +35,9 @@ func newScoreCache(cb *CacheBuilder) *ScoreCache {
 }
 
 func (sc *ScoreCache) reset() {
-	sc.evictList = []*scoredItem{}
+	newHeap := priorityHeap([]*scoredItem{})
+	sc.evictList = &newHeap
+	heap.Init(sc.evictList)
 	sc.items = make(map[interface{}]*scoredItem)
 }
 
@@ -94,6 +97,8 @@ func (sc *ScoreCache) set(key, value interface{}) *scoredItem {
 		existing.score = sc.computeScore(value)
 		existing.weight = sc.computeWeight(value)
 		sc.totalWeight += existing.weight
+		idx, _ := sc.getIndex(key)
+		heap.Fix(sc.evictList, idx)
 		return existing
 	}
 
@@ -103,7 +108,7 @@ func (sc *ScoreCache) set(key, value interface{}) *scoredItem {
 	if sc.totalWeight+item.weight > sc.size {
 		sc.evictUntil(item.weight)
 	}
-	sc.evictList = append(sc.evictList, item)
+	heap.Push(sc.evictList, item)
 	sc.items[key] = item
 	sc.totalWeight += item.weight
 
@@ -121,7 +126,7 @@ func (sc *ScoreCache) Remove(key interface{}) bool {
 		delete(sc.items, key)
 		index := -1
 
-		for i, it := range sc.evictList {
+		for i, it := range []*scoredItem(*sc.evictList) {
 			if it.key == key {
 				index = i
 				break
@@ -129,16 +134,12 @@ func (sc *ScoreCache) Remove(key interface{}) bool {
 		}
 
 		if index > 0 {
-			copy(sc.evictList[index:], sc.evictList[index+1:])
-			sc.evictList[len(sc.evictList)-1] = nil
-			sc.evictList = sc.evictList[:len(sc.evictList)-1]
+			heap.Remove(sc.evictList, index)
+			sc.totalWeight -= item.weight
+			sc.evictedCallback(item.key, item.value)
+			return true
 		}
-
-		sc.totalWeight -= item.weight
-		sc.evictedCallback(item.key, item.value)
-		return true
 	}
-
 	return false
 }
 
@@ -215,7 +216,7 @@ func (sc *ScoreCache) evictUntil(w int) {
 	targetWeight := sc.totalWeight - w
 	var item *scoredItem
 	for sc.totalWeight > targetWeight {
-		item, sc.evictList = sc.evictList[len(sc.evictList)-1], sc.evictList[:len(sc.evictList)-1]
+		item = heap.Pop(sc.evictList).(*scoredItem)
 		delete(sc.items, item.key)
 		sc.evictedCallback(item.key, item.value)
 		sc.totalWeight -= item.weight
@@ -234,6 +235,15 @@ func (sc *ScoreCache) evictedCallback(key, value interface{}) {
 	}
 }
 
+func (sc *ScoreCache) getIndex(key interface{}) (int, error) {
+	for i, item := range []*scoredItem(*sc.evictList) {
+		if item.key == key {
+			return i, nil
+		}
+	}
+	return -1, KeyNotFoundError
+}
+
 type scoredItem struct {
 	key    interface{}
 	value  interface{}
@@ -246,4 +256,30 @@ func (sc *ScoreCache) newScoredItem(key, value interface{}) *scoredItem {
 	weight := sc.computeWeight(value)
 
 	return &scoredItem{key: key, value: value, score: score, weight: weight}
+}
+
+type priorityHeap []*scoredItem
+
+func (h *priorityHeap) Push(x interface{}) {
+	item := x.(*scoredItem)
+	*h = append(*h, item)
+}
+
+func (h *priorityHeap) Pop() interface{} {
+	old := *h
+	item := old[len(old)-1]
+	*h = old[0 : len(old)-1]
+	return item
+}
+
+func (h priorityHeap) Len() int {
+	return len(h)
+}
+
+func (h priorityHeap) Less(i, j int) bool {
+	return h[i].score < h[j].score
+}
+
+func (h priorityHeap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
 }
