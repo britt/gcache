@@ -270,3 +270,7 @@ func TestScoreCache_Stats(t *testing.T) {
 		assert.Equal(t, float64(0.25), c.HitRate())
 	})
 }
+
+func BenchScoreCache_Set(b *testing.B) {
+
+}
